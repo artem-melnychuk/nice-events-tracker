@@ -107,6 +107,18 @@ class CategoryTests(unittest.TestCase):
 
         self.assertEqual([r.title for r in result.records], ["Chopin"])
 
+    def test_an_afterwork_is_collected_as_a_concert(self) -> None:
+        afterwork = (
+            CONCERT_ARTICLE_HTML.replace(">Concert</a>", ">Afterwork</a>")
+            .replace("Chopin", "Afterwork - Brahms")
+            .replace("1527", "1600")
+        )
+        session = FakeSession({page_url(1): f"<html><body>{afterwork}{RENCONTRE_ARTICLE_HTML}</body></html>"})
+
+        result = OperaDeNiceCollector().collect(session)
+
+        self.assertEqual([(r.title, r.category) for r in result.records], [("Afterwork - Brahms", "Concert")])
+
     def test_other_collects_the_labels_the_taxonomy_does_not_know(self) -> None:
         result = OperaDeNiceCollector(category_filter=["Other"]).collect(self.session)
 

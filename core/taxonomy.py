@@ -53,6 +53,9 @@ LABEL_OVERRIDES: dict[str, str] = {
     # A trade fair or salon ("Annual Autumn Fair", "Foire du Village"); the
     # word "show" alone would make it a Show.
     "fair or show": "Market",
+    # Musical evenings at the Opera de Nice (Brahms, accordion, jazz in a
+    # cellar or the foyer): concerts by the owner's decision, 2026-10-02.
+    "afterwork": "Concert",
 }
 
 # Categories the Tourism System sites (Cannes, Menton) file under their

@@ -110,15 +110,16 @@ class LabelsSeenOnLiveSitesTests(unittest.TestCase):
     """Labels read off the live Opera de Nice and explorenicecotedazur listings on 2026-10-02.
 
     Pinned with the category each one should get, after looking at the events
-    behind the ambiguous ones. "Afterwork" (musical evenings at the Opera) is
-    deliberately not here: whether it counts as Concert changes what a normal
-    run collects, and that is the owner's call.
+    behind the ambiguous ones. "Afterwork" (musical evenings at the Opera:
+    Brahms, accordion, jazz) counts as Concert by the owner's decision, which
+    means a normal run now collects them.
     """
 
     def test_labels_map_to_the_category_their_events_belong_to(self) -> None:
         cases = {
             # Opera de Nice
             "Concert": "Concert",
+            "Afterwork": "Concert",
             "Spectacle musical": "Show",  # children's shows ("Viens avec ton doudou")
             "Opéra": "Show",
             "Ballet": "Show",
