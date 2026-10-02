@@ -106,5 +106,54 @@ class CategoryFilterTests(unittest.TestCase):
         self.assertFalse(only_cultural(None))
 
 
+class LabelsSeenOnLiveSitesTests(unittest.TestCase):
+    """Labels read off the live Opera de Nice and explorenicecotedazur listings on 2026-10-02.
+
+    Pinned with the category each one should get, after looking at the events
+    behind the ambiguous ones. "Afterwork" (musical evenings at the Opera) is
+    deliberately not here: whether it counts as Concert changes what a normal
+    run collects, and that is the owner's call.
+    """
+
+    def test_labels_map_to_the_category_their_events_belong_to(self) -> None:
+        cases = {
+            # Opera de Nice
+            "Concert": "Concert",
+            "Spectacle musical": "Show",  # children's shows ("Viens avec ton doudou")
+            "Opéra": "Show",
+            "Ballet": "Show",
+            "Événement": "",  # escape game, stand-up
+            "Rencontre": "",  # talks and lectures
+            # explorenicecotedazur
+            "Theatre": "Show",
+            "Exhibition": "Exhibition",
+            "Show": "Show",
+            "One man Show / One woman show": "Show",
+            "Dance evening": "Show",
+            "Festival": "Festival",
+            "Traditional festival": "Festival",
+            "Tasting": "Gastronomy",
+            "Competitive sport": "Sport",
+            "Water sports": "Sport",
+            "Climbing sports": "Sport",
+            "Conference": "",
+            "Meeting": "",
+            # trade fairs and salons ("Annual Autumn Fair", "Foire du Village"), not shows
+            "Fair or show": "Market",
+            # a flea market and a retailers' sale
+            "Clearance sale": "Market",
+            "Soldes": "Market",
+        }
+        for label, expected in cases.items():
+            with self.subTest(label=label):
+                self.assertEqual(canonical_category(label), expected)
+
+    def test_the_fair_or_show_override_is_not_a_general_show_to_market_swap(self) -> None:
+        self.assertEqual(canonical_category("FAIR  or  Show"), "Market")
+        self.assertEqual(canonical_category("Show"), "Show")
+        self.assertEqual(canonical_category("Fair"), "Market")
+        self.assertEqual(canonical_category("Comedy show"), "Show")
+
+
 if __name__ == "__main__":
     unittest.main()

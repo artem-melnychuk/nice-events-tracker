@@ -96,7 +96,7 @@ I set the requirements, choose and vet the sources, rate events, and make the ca
 
 - [x] Concerts from several sources with cross-source deduplication.
 - [x] Broaden geography from Nice to the wider Côte d'Azur (Cannes, Menton done).
-- [ ] Broaden from concerts to the full event taxonomy (festivals, markets, exhibitions, sports, gastronomy). The taxonomy, the per-source mapping and the category setting are in; still to do is checking each site's real labels against it and switching more categories on.
+- [ ] Broaden from concerts to the full event taxonomy (festivals, markets, exhibitions, sports, gastronomy). The taxonomy, the per-source mapping and the category setting are in, and the Opéra and explorenicecotedazur labels have been checked against live listings; still to do is checking the Cannes and Menton labels and switching more categories on.
 - [ ] Broaden geography further (Grasse, Monaco, nearby major cities), preferably from open data such as DATAtourisme rather than scraping.
 - [ ] Add more sources, dedup across them, automate a daily run, and (maybe) push notifications for new events.
 - [ ] A separate, related project: a music-festival tracker across Europe, reusing the same core once it's proven here.

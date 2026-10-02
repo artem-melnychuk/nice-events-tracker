@@ -35,7 +35,7 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     ),
     "Market": (
         "market", "markets", "marche", "marches", "flea", "brocante", "brocantes", "vide", "braderie",
-        "fair", "fairs", "foire", "foires", "salon", "commercial",
+        "fair", "fairs", "foire", "foires", "salon", "commercial", "sale", "sales", "soldes", "clearance",
     ),
     "Sport": (
         "sport", "sports", "sporting", "sportif", "sportive", "running", "race", "races", "course",
@@ -47,6 +47,14 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
 CATEGORIES: tuple[str, ...] = tuple(CATEGORY_KEYWORDS)
 OTHER = "Other"
 
+# Whole labels whose words point at the wrong category, checked before the
+# keyword lists. Keys are the label folded to lowercase words.
+LABEL_OVERRIDES: dict[str, str] = {
+    # A trade fair or salon ("Annual Autumn Fair", "Foire du Village"); the
+    # word "show" alone would make it a Show.
+    "fair or show": "Market",
+}
+
 # Categories the Tourism System sites (Cannes, Menton) file under their
 # CULTURAL or ENTERTAINMENT/RECREATION listing types. Asking only for these
 # keeps the crawl to the detail pages it already opened for concerts.
@@ -55,14 +63,18 @@ CULTURAL_CATEGORIES = frozenset({"Concert", "Festival", "Show", "Exhibition"})
 _WORD = re.compile(r"[a-z]+")
 
 
-def _words(label: str) -> set[str]:
+def _folded_words(label: str) -> list[str]:
     folded = unicodedata.normalize("NFKD", label).encode("ascii", "ignore").decode("ascii").lower()
-    return set(_WORD.findall(folded))
+    return _WORD.findall(folded)
 
 
 def canonical_category(label: str) -> str:
     """The canonical category a source label belongs to, or "" if none fits."""
-    words = _words(label or "")
+    ordered = _folded_words(label or "")
+    override = LABEL_OVERRIDES.get(" ".join(ordered))
+    if override:
+        return override
+    words = set(ordered)
     for category, keywords in CATEGORY_KEYWORDS.items():
         if words.intersection(keywords):
             return category
