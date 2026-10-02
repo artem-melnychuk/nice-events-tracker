@@ -88,6 +88,13 @@ class ParseOfferTests(unittest.TestCase):
         self.assertEqual(record.source, "explorenicecotedazur")
         self.assertEqual(record.availability, "")
 
+    def test_the_category_label_is_mapped_onto_the_shared_taxonomy(self) -> None:
+        html = CONCERT_CARD_HTML.replace('<span class="content">Concert</span>', '<span class="content">Exposition</span>')
+        record = parse_offer(BeautifulSoup(html, "lxml").select_one("li"))
+
+        self.assertEqual(record.category, "Exhibition")
+        self.assertEqual(record.theme, "Jazz and blues")
+
     def test_captures_the_source_s_own_cancellation_badge(self) -> None:
         soup = BeautifulSoup(CANCELLED_CARD_HTML, "lxml")
         offer_li = soup.select_one("li.wpet-block-list__offer")

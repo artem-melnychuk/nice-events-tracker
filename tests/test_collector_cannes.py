@@ -217,6 +217,27 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(result.records[0].category, "Concert")
         self.assertNotIn("https://x/e3", session.requested)
 
+    def test_cultural_categories_keep_the_crawl_to_cultural_listing_types(self) -> None:
+        session = FakeSession(self._pages())
+
+        result = CannesCollector(category_filter=["Exhibition"]).collect(session)
+
+        self.assertEqual([(r.title, r.category) for r in result.records], [("Expo", "Exhibition")])
+        self.assertNotIn("https://x/e3", session.requested)
+
+    def test_asking_for_sport_opens_the_other_listing_types_too(self) -> None:
+        session = FakeSession(self._pages())
+
+        result = CannesCollector(category_filter=["Sport"]).collect(session)
+
+        self.assertEqual([(r.title, r.category) for r in result.records], [("Swim", "Sport")])
+        self.assertIn("https://x/e3", session.requested)
+
+    def test_all_collects_every_category(self) -> None:
+        result = CannesCollector(category_filter="all").collect(FakeSession(self._pages()))
+
+        self.assertEqual(sorted(r.category for r in result.records), ["Concert", "Exhibition", "Sport"])
+
     def test_an_event_repeated_across_listing_pages_is_fetched_once(self) -> None:
         session = FakeSession(self._pages())
 

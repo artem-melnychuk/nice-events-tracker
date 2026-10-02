@@ -3,7 +3,16 @@ storage:
   processed_path: data/processed/nice_events_processed.xlsx
 
 collection:
-  category_filter: Concert
+  # Which events to collect from the sources that list more than concerts
+  # (explorenicecotedazur, opera_de_nice, cannes, menton). Canonical names
+  # from core/taxonomy.py: Concert, Festival, Show, Exhibition, Gastronomy,
+  # Market, Sport, Other -- or `all`. Each source's own labels ("Exposition",
+  # "Sports and recreation", "Récital") are mapped onto these. Asking for
+  # Market, Sport, Gastronomy or Other makes Cannes and Menton open every
+  # detail page instead of only the cultural ones, so those runs make more
+  # requests. A one-off run can override this with --category.
+  categories:
+    - Concert
   # Themes with a poor like rate in the review tool (0/10 across Pop music,
   # Rap/R&B/Soul and Light music as of 100 ratings, 2026-09-17) -- sunk to the
   # bottom of the processed workbook instead of interleaved chronologically,

@@ -102,11 +102,16 @@ class DetailTests(unittest.TestCase):
         self.assertEqual(record.price, "")
         self.assertEqual(record.availability, "")
 
-    def test_a_non_concert_takes_its_first_criterion_as_category(self) -> None:
+    def test_a_non_concert_takes_the_canonical_category_of_its_criteria(self) -> None:
         record = parse_detail(detail_page(criteria="Sports and recreation, Running"), ENTRY)
 
-        self.assertEqual(record.category, "Sports and recreation")
+        self.assertEqual(record.category, "Sport")
         self.assertEqual(record.theme, "Running")
+
+    def test_an_unrecognised_first_criterion_is_kept_as_written(self) -> None:
+        record = parse_detail(detail_page(criteria="Heritage, Guided tour"), ENTRY)
+
+        self.assertEqual((record.category, record.theme), ("Heritage", "Guided tour"))
 
     def test_no_criteria_span_gives_an_empty_category_and_theme(self) -> None:
         record = parse_detail(detail_page(criteria=None), ENTRY)

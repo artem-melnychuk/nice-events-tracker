@@ -23,7 +23,7 @@ import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 from bs4 import BeautifulSoup
@@ -32,6 +32,7 @@ from playwright.sync_api import sync_playwright
 
 from collectors.base import BaseCollector, CollectorResult
 from core.models import EventRecord
+from core.taxonomy import category_matches, only_cultural, parse_category_filter, pick_category
 
 BASE_URL = "https://www.antibesjuanlespins.com/en/must-see-must-do/going-out/diary-all-the-events"
 HEADERS = {"User-Agent": "Mozilla/5.0 (nice-events-tracker; personal project)", "Accept-Language": "en"}
@@ -125,8 +126,8 @@ def parse_detail(html: str, entry: ListingEntry) -> EventRecord | None:
         return None
 
     criteria = parse_criteria(soup)
-    category = "Concert" if "Concert" in criteria else (criteria[0] if criteria else "")
-    theme = next((c for c in criteria if c not in ("Concert", category)), "")
+    category, chip = pick_category(criteria)
+    theme = next((c for c in criteria if c != chip), "")
 
     status = EVENT_STATUS_LABELS.get(str(event.get("eventStatus", "")).rsplit("/", 1)[-1], "")
     if not status and CANCELLATION_IN_TITLE.search(entry.title):
@@ -148,12 +149,12 @@ def parse_detail(html: str, entry: ListingEntry) -> EventRecord | None:
 
 
 class AntibesCollector(BaseCollector):
-    """Collect concerts from the Antibes Juan-les-Pins Tourist Office agenda."""
+    """Collect events of the wanted categories from the Antibes Juan-les-Pins Tourist Office agenda."""
 
     source_name = "antibes"
 
-    def __init__(self, category_filter: str | None = "Concert") -> None:
-        self.category_filter = category_filter
+    def __init__(self, category_filter: str | Iterable[str] | None = "Concert") -> None:
+        self.categories = parse_category_filter(category_filter)
 
     def _get(self, session: requests.Session, url: str) -> str:
         response = session.get(url, headers=HEADERS, timeout=20)
@@ -210,7 +211,7 @@ class AntibesCollector(BaseCollector):
                     record = parse_detail(html, entry)
                     if record is None:
                         continue
-                    if self.category_filter and record.category.lower() != self.category_filter.lower():
+                    if not category_matches(record.category, self.categories):
                         continue
                     result.records.append(record)
             finally:

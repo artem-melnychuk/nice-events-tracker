@@ -2,10 +2,10 @@
 
 en.cannes-france.com/events/all-agenda/ is plain server-rendered HTML. Its
 listing only labels an event with a coarse type ("CULTURAL" also covers
-exhibitions and heritage days), so a concert is recognised from the
-criteria list on the event's own page. To keep the request count down only
-listing types that can hold a concert get a detail request; the rest are
-skipped.
+exhibitions and heritage days), so the category comes from the criteria
+list on the event's own page, mapped onto `core.taxonomy`. To keep the
+request count down only the cultural listing types get a detail request
+while the wanted categories are all cultural ones; the rest are skipped.
 
 robots.txt disallows `listpage=1` (page one is the bare agenda URL) and any
 `?p=` / `?query=` form, so the crawl uses exactly `?listpage=N` for N >= 2.
@@ -18,20 +18,23 @@ import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 from bs4 import BeautifulSoup
 
 from collectors.base import BaseCollector, CollectorResult
 from core.models import EventRecord
+from core.taxonomy import category_matches, only_cultural, parse_category_filter, pick_category
 
 BASE_URL = "https://en.cannes-france.com/events/all-agenda/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (nice-events-tracker; personal project)", "Accept-Language": "en"}
 REQUEST_DELAY_SECONDS = 0.6
 
-# Listing types that can contain a concert; the site's other types
-# (COMMERCIAL EVENT, SPORTS AND LEISURE) never do.
+# Listing types that hold concerts, shows, festivals and exhibitions; the
+# site's other types (COMMERCIAL EVENT, SPORTS AND LEISURE) never do. Only
+# these get a detail request unless markets, sport, gastronomy or "Other"
+# are wanted too (see `core.taxonomy.only_cultural`).
 DETAIL_TYPES = {"CULTURAL", "ENTERTAINMENT/RECREATION"}
 
 EVENT_STATUS_LABELS = {
@@ -148,8 +151,8 @@ def parse_detail(html: str, entry: ListingEntry) -> EventRecord | None:
     criteria = parse_criteria(soup)
     type_label = entry.type.strip().lower()
     extras = [c for c in criteria if c.lower() != type_label]
-    category = "Concert" if "Concert" in criteria else (extras[0] if extras else "")
-    theme = next((c for c in extras if c not in ("Concert", category)), "")
+    category, chip = pick_category(extras)
+    theme = next((c for c in extras if c != chip), "")
 
     status = EVENT_STATUS_LABELS.get(str(event.get("eventStatus", "")).rsplit("/", 1)[-1], "")
     if not status and CANCELLATION_IN_TITLE.search(entry.title):
@@ -172,12 +175,12 @@ def parse_detail(html: str, entry: ListingEntry) -> EventRecord | None:
 
 
 class CannesCollector(BaseCollector):
-    """Collect concerts from the Cannes Tourist Office agenda."""
+    """Collect events of the wanted categories from the Cannes Tourist Office agenda."""
 
     source_name = "cannes"
 
-    def __init__(self, category_filter: str | None = "Concert") -> None:
-        self.category_filter = category_filter
+    def __init__(self, category_filter: str | Iterable[str] | None = "Concert") -> None:
+        self.categories = parse_category_filter(category_filter)
 
     def _get(self, session: requests.Session, url: str) -> str:
         # A handful of event slugs with an accented punctuation mark (e.g. "E=mc²")
@@ -226,7 +229,7 @@ class CannesCollector(BaseCollector):
         result = CollectorResult(source=self.source_name)
 
         for entry in self._listing(session, result):
-            if entry.type.strip().upper() not in DETAIL_TYPES:
+            if only_cultural(self.categories) and entry.type.strip().upper() not in DETAIL_TYPES:
                 continue
             if limit is not None and len(result.records) >= limit:
                 break
@@ -239,7 +242,7 @@ class CannesCollector(BaseCollector):
                 continue
             if record is None:
                 continue
-            if self.category_filter and record.category.lower() != self.category_filter.lower():
+            if not category_matches(record.category, self.categories):
                 continue
             result.records.append(record)
 
