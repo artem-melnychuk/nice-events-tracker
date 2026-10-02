@@ -12,13 +12,14 @@ from __future__ import annotations
 import re
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 from bs4 import BeautifulSoup
 
 from collectors.base import BaseCollector, CollectorResult
 from core.models import EventRecord
+from core.taxonomy import category_matches, normalize_category, parse_category_filter
 
 MONTHS = {
     "january": "01", "february": "02", "march": "03", "april": "04",
@@ -89,7 +90,7 @@ def parse_offer(offer_li: Any) -> EventRecord | None:
         source="explorenicecotedazur",
         date_collected=datetime.now().astimezone().isoformat(timespec="seconds"),
         title=title_link.get_text(strip=True),
-        category=category,
+        category=normalize_category(category),
         theme=theme,
         start_date=start_date,
         end_date=end_date,
@@ -105,8 +106,8 @@ class ExploreNiceCoteDAzurCollector(BaseCollector):
 
     source_name = "explorenicecotedazur"
 
-    def __init__(self, category_filter: str | None = "Concert") -> None:
-        self.category_filter = category_filter
+    def __init__(self, category_filter: str | Iterable[str] | None = "Concert") -> None:
+        self.categories = parse_category_filter(category_filter)
 
     def _fetch_soup(self, session: requests.Session, page_number: int) -> BeautifulSoup:
         response = session.get(page_url(page_number), headers=HEADERS, timeout=20)
@@ -140,7 +141,7 @@ class ExploreNiceCoteDAzurCollector(BaseCollector):
                 record = parse_offer(offer_li)
                 if record is None:
                     continue
-                if self.category_filter and record.category.strip().lower() != self.category_filter.lower():
+                if not category_matches(record.category, self.categories):
                     continue
                 result.records.append(record)
                 if limit is not None and len(result.records) >= limit:

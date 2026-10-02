@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 from bs4 import BeautifulSoup
 
 from collectors.base import BaseCollector, CollectorResult
 from core.models import EventRecord
+from core.taxonomy import category_matches, normalize_category, parse_category_filter
 
 BASE_URL = "https://www.opera-nice.org/agenda/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (nice-events-tracker; personal project)"}
@@ -51,7 +52,7 @@ def parse_event(article: Any) -> EventRecord | None:
         source="opera_de_nice",
         date_collected=datetime.now().astimezone().isoformat(timespec="seconds"),
         title=title_el.get_text(strip=True),
-        category=category,
+        category=normalize_category(category),
         start_date=start_date,
         end_date=start_date,
         venue=venue,
@@ -65,8 +66,8 @@ class OperaDeNiceCollector(BaseCollector):
 
     source_name = "opera_de_nice"
 
-    def __init__(self, category_filter: str | None = "Concert") -> None:
-        self.category_filter = category_filter
+    def __init__(self, category_filter: str | Iterable[str] | None = "Concert") -> None:
+        self.categories = parse_category_filter(category_filter)
 
     def _fetch_soup(self, session: requests.Session, page_number: int) -> BeautifulSoup:
         response = session.get(page_url(page_number), headers=HEADERS, timeout=20)
@@ -101,7 +102,7 @@ class OperaDeNiceCollector(BaseCollector):
                 record = parse_event(article)
                 if record is None:
                     continue
-                if self.category_filter and record.category.strip().lower() != self.category_filter.lower():
+                if not category_matches(record.category, self.categories):
                     continue
                 result.records.append(record)
                 if limit is not None and len(result.records) >= limit:

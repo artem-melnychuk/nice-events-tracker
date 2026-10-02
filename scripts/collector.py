@@ -26,6 +26,7 @@ from core.deduplication import deduplicate_records, merge_cross_source_duplicate
 from core.filters import drop_finished_events
 from core.priority import sort_by_theme_priority
 from core.storage import load_records, merge_records, save_records
+from core.taxonomy import CATEGORIES, OTHER, parse_category_filter
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "settings.yaml"
@@ -43,16 +44,25 @@ COLLECTOR_REGISTRY: dict[str, type[BaseCollector]] = {
 }
 
 # Sources whose collector takes a category_filter kwarg (they list mixed
-# categories and need it to narrow down to concerts). Songkick is concert-only
-# by nature and needs no filter.
+# categories and need it to narrow down to the wanted ones). Songkick, Panda
+# Events and HelloAsso are concert-only by nature and need no filter.
 CATEGORY_FILTERED_SOURCES = {"explorenicecotedazur", "opera_de_nice", "cannes", "antibes", "menton"}
 
 
-def build_collector(source_name: str, settings: dict) -> BaseCollector:
+def configured_categories(settings: dict) -> str | list[str] | None:
+    """The `collection.categories` setting, or the older single `category_filter`."""
+    collection = settings.get("collection", {})
+    if "categories" in collection:
+        return collection["categories"]
+    return collection.get("category_filter")
+
+
+def build_collector(source_name: str, settings: dict, categories: list[str] | None = None) -> BaseCollector:
+    """Instantiate a source's collector; `categories` overrides the settings."""
     collector_class = COLLECTOR_REGISTRY[source_name]
     if source_name in CATEGORY_FILTERED_SOURCES:
-        category_filter = settings.get("collection", {}).get("category_filter")
-        return collector_class(category_filter=category_filter)
+        wanted = categories if categories else configured_categories(settings)
+        return collector_class(category_filter=wanted)
     if source_name == "helloasso":
         associations = settings.get("helloasso", {}).get("associations", [])
         return collector_class(association_slugs=associations)
@@ -67,6 +77,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="append",
         help="Limit the run to one source (repeatable). Default: all sources in settings.yaml.",
     )
+    parser.add_argument(
+        "--category",
+        action="append",
+        help=f"Collect this category instead of settings.yaml's (repeatable): {', '.join(CATEGORIES)}, {OTHER} or all.",
+    )
     parser.add_argument("--limit", type=int, default=None, help="Cap the number of records per source.")
     return parser.parse_args(argv)
 
@@ -79,8 +94,12 @@ def main(argv: list[str] | None = None) -> int:
     session = requests.Session()
     all_records = []
 
+    # Fail on a misspelt category before any request goes out.
+    wanted = parse_category_filter(args.category or configured_categories(settings))
+    print(f"Categories: {', '.join(sorted(wanted)) if wanted else 'all'}")
+
     for source_name in sources:
-        collector = build_collector(source_name, settings)
+        collector = build_collector(source_name, settings, categories=args.category)
         print(f"Collecting from {source_name}...")
         result = collector.collect(session, limit=args.limit)
         print(f"  {result.found} records, {result.errors} errors")

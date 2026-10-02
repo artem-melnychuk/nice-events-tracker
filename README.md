@@ -13,6 +13,7 @@ Works end to end on a few hundred upcoming events. Runs are started by hand: no 
 - **Collectors.** One adapter per source behind a common `BaseCollector` interface: plain HTTP with BeautifulSoup for server-rendered pages, headless Playwright for sites that reject plain HTTP clients or render in the browser.
 - **Cross-source deduplication.** The same concert often appears on two or three sites under different titles ("Ninho – Quatro Tour" vs "Ninho @ Palais Nikaïa", "Isha & Limsa" vs "LIMSA + ISHA"). Records are grouped by date and merged on title, word prefix, reordered words or shared venue, keeping the richest fields of each.
 - **Stable identity.** An event keeps its id when a new source joins it or its title or URL changes, so reruns update rows instead of duplicating them and my ratings stay attached.
+- **One category vocabulary.** Each source's own labels ("Exposition", "Récital", "Sports and recreation") are mapped onto a small shared taxonomy: Concert, Festival, Show, Exhibition, Gastronomy, Market, Sport, plus Other for labels it doesn't know. `config/settings.yaml` picks which ones to collect; it is set to concerts only for now.
 - **Ranking.** Themes I consistently dislike sink to the bottom of the workbook (config-driven), events that already ended are not added, cancellations are flagged.
 - **Excel output.** A raw workbook per run and a processed workbook merged across runs.
 - **Manual channel.** Events from sources that can't or shouldn't be scraped go into `config/manual_events.yaml` and flow through the same pipeline.
@@ -49,6 +50,8 @@ python -m venv .venv
 .venv\Scripts\python scripts\collector.py
 ```
 
+`--category Exhibition` (repeatable, or `--category all`) collects other categories for one run without touching the settings.
+
 Output goes to `data/raw/nice_events_raw.xlsx` and `data/processed/nice_events_processed.xlsx` (gitignored). A partial run (`--source X`) refreshes X's fields on rows already merged from several sources and keeps what the other sources contributed (theme, venue, ...); run all sources to re-decide a merge from scratch.
 
 Tests run offline on saved markup and fake sessions:
@@ -73,7 +76,7 @@ I set the requirements, choose and vet the sources, rate events, and make the ca
 
 - [x] Concerts from several sources with cross-source deduplication.
 - [x] Broaden geography from Nice to the wider Côte d'Azur (Cannes, Menton done).
-- [ ] Broaden from concerts to the full event taxonomy (festivals, markets, exhibitions, sports, gastronomy).
+- [ ] Broaden from concerts to the full event taxonomy (festivals, markets, exhibitions, sports, gastronomy). The taxonomy, the per-source mapping and the category setting are in; still to do is checking each site's real labels against it and switching more categories on.
 - [ ] Broaden geography further (Grasse, Monaco, nearby major cities), preferably from open data such as DATAtourisme rather than scraping.
 - [ ] Add more sources, dedup across them, automate a daily run, and (maybe) push notifications for new events.
 - [ ] A separate, related project: a music-festival tracker across Europe, reusing the same core once it's proven here.
@@ -82,7 +85,7 @@ I set the requirements, choose and vet the sources, rate events, and make the ca
 
 ```text
 collectors/   one adapter per source, plus BaseCollector
-core/         EventRecord, ids, dedup and merge, Excel storage, filters, ranking, sync diff
+core/         EventRecord, ids, category taxonomy, dedup and merge, Excel storage, filters, ranking, sync diff
 scripts/      collector.py (main run), sync_diff.py, add_manual_events.py, drop_source.py
 config/       settings.yaml (sources, disliked themes), manual_events.yaml
 tests/        unit tests

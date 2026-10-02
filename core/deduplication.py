@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 
 from core.ids import build_deduplication_key, build_event_id, normalize_title_for_matching
 from core.models import EventRecord
+from core.taxonomy import canonical_category
 
 
 @dataclass(slots=True)
@@ -165,12 +166,27 @@ def covers_same_event(stored: EventRecord, incoming: EventRecord) -> bool:
     return titles_overlap(tokens_stored, tokens_incoming) or share_venue_and_lead(stored, incoming)
 
 
+def different_kinds(a: EventRecord, b: EventRecord) -> bool:
+    """True if both records have a recognised category and the two differ.
+
+    Once more than concerts are collected, one venue can host a market in
+    the morning and a concert at night, and "Marche de Noel" is a word
+    prefix of "Marche de Noel - Concert de cloture". The loose same-day
+    links are not evidence enough across categories; an exact title match
+    still is (see `merge_cross_source_duplicates`). A record whose category
+    is blank or unrecognised never blocks a link.
+    """
+    kind_a, kind_b = canonical_category(a.category), canonical_category(b.category)
+    return bool(kind_a and kind_b and kind_a != kind_b)
+
+
 def _cluster_same_day(records: list[EventRecord]) -> list[list[EventRecord]]:
     """Group same-day records that are plausibly one event listed several ways.
 
     Two records are linked when their titles overlap (prefix or reordered
     words), or when they name the same venue and lead word and come from
-    disjoint sources. Links chain, so a co-headliner listed on its own still
+    disjoint sources, and never across two different known categories (see
+    `different_kinds`). Links chain, so a co-headliner listed on its own still
     joins the double bill. A cluster is only kept if it spans more than one
     distinct source -- this pass exists for cross-source matches, not to
     second-guess a single source's own listings.
@@ -186,6 +202,8 @@ def _cluster_same_day(records: list[EventRecord]) -> list[list[EventRecord]]:
 
     for i in range(len(records)):
         for j in range(i + 1, len(records)):
+            if different_kinds(records[i], records[j]):
+                continue
             linked = titles_overlap(tokens[i], tokens[j]) or (
                 _atomic_sources(records[i]).isdisjoint(_atomic_sources(records[j]))
                 and share_venue_and_lead(records[i], records[j])
