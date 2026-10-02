@@ -1,0 +1,5 @@
+# Files that are built into the Linux containers or run inside them must keep LF
+# line endings on Windows too: a script with CRLF fails with "$'\r': command not found".
+.sandbox/** text eol=lf
+.dockerignore text eol=lf
+*.sh text eol=lf

@@ -1,0 +1,4 @@
+# The agent image needs two files from this repo; keep the build context to those.
+*
+!requirements.txt
+!.sandbox/agent-rules.md
