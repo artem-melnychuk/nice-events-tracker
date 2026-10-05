@@ -25,7 +25,12 @@ collection:
 
 sources:
   - explorenicecotedazur
-  - songkick
+  # songkick was collected from mid-September 2026 until 2026-10-05 and is switched
+  # off on purpose: its terms prohibit scrapers and automated data mining without
+  # written consent. The adapter and its tests stay; re-enable only with that
+  # consent. The events already collected stay in the workbook as history and are
+  # no longer refreshed.
+  # - songkick
   - opera_de_nice
   - helloasso
   - panda_events
