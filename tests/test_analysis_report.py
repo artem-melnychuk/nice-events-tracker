@@ -125,6 +125,16 @@ class ReportTests(unittest.TestCase):
         self.assertIn("| Jazz | 4 | 4 | 100% | 0.002 |", text)
         self.assertIn("| (not given) | 8 | 0 | 0% | - |", text)
 
+    def test_the_note_about_hidden_groups_reads_correctly_for_one_and_for_many(self) -> None:
+        after = [rec("e1", theme="Jazz"), rec("e2", theme="Jazz"), rec("e3", theme="Rock")]
+        text = render_report(after, {"e1": "like", "e2": "like", "e3": "dislike"}, min_rated=2, today=date(2026, 10, 5))
+        self.assertIn("1 further rating in 1 group with fewer than 2 ratings is not shown.", text)
+
+        many = [rec(f"e{i}", theme=f"T{i}") for i in range(4)] + [rec("e9", theme="Jazz"), rec("e10", theme="Jazz")]
+        ratings = {record.event_id: "like" for record in many}
+        text = render_report(many, ratings, min_rated=2, today=date(2026, 10, 5))
+        self.assertIn("4 further ratings in 4 groups with fewer than 2 ratings are not shown.", text)
+
     def test_without_a_before_workbook_the_comparison_is_skipped(self) -> None:
         text = render_report([rec("e1", price="5")], {"e1": "like"}, today=date(2026, 10, 5))
         self.assertNotIn("before and after", text)

@@ -173,7 +173,10 @@ def like_table(
         [(name, rated, liked, pct(liked, rated), p_cell(name, rated, liked)) for name, rated, liked in rows],
     )
     if hidden_groups:
-        text += f"\n\n{hidden_ratings} further ratings in {hidden_groups} groups with fewer than {min_rated} ratings are not shown."
+        ratings_text = f"{hidden_ratings} further rating" + ("" if hidden_ratings == 1 else "s")
+        groups_text = f"{hidden_groups} group" + ("" if hidden_groups == 1 else "s")
+        verb = "is" if hidden_ratings == 1 else "are"
+        text += f"\n\n{ratings_text} in {groups_text} with fewer than {min_rated} ratings {verb} not shown."
     return text
 
 
