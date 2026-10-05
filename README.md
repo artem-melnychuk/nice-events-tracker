@@ -95,7 +95,7 @@ No Songkick-only event has a price (0 of 42); the 15 priced events listed on Son
 
 ### What I liked
 
-Share of the rated events I liked, by source, theme, venue and price. Themes and venues with fewer than 5 ratings are left out. About half of the rated events have no venue or theme, because the source listed none. Songkick's 42 rated events date from the period it was collected (see [Sources](#sources)).
+Share of the rated events I liked, by source, theme, venue and price. Groups with fewer than 5 ratings are left out. About half of the rated events have no venue or theme, because the source listed none. Songkick's 42 rated events date from the period it was collected (see [Sources](#sources)).
 
 | Source | Rated | Liked | Like rate | p vs rest |
 |---|---|---|---|---|
