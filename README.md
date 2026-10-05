@@ -33,16 +33,16 @@ Four invented listings (fictional artist, venues and URLs) for the same day, run
 | Source | Title as listed | Theme | Venue | Price |
 |---|---|---|---|---|
 | explorenicecotedazur | Marlowe & the Tides — Blue Hour Tour | Jazz and blues | – | – |
-| songkick | Marlowe & the Tides @ Salle Fictive | – | Salle Fictive | – |
+| cannes | Marlowe & the Tides | – | Salle Fictive | – |
 | panda_events | MARLOWE & THE TIDES | – | Salle Fictive | from 18 € |
-| songkick | Quartet Nocturne @ Halle du Port | – | Halle du Port | – |
+| opera_de_nice | Quartet Nocturne | – | Halle du Port | – |
 
 Result: two rows.
 
 | Source | Title | Theme | Venue | Price |
 |---|---|---|---|---|
-| explorenicecotedazur+panda_events+songkick | Marlowe & the Tides | Jazz and blues | Salle Fictive | from 18 € |
-| songkick | Quartet Nocturne @ Halle du Port | – | Halle du Port | – |
+| cannes+explorenicecotedazur+panda_events | Marlowe & the Tides | Jazz and blues | Salle Fictive | from 18 € |
+| opera_de_nice | Quartet Nocturne | – | Halle du Port | – |
 
 The first three share a date and a title (exactly, or as a word prefix), so they become one row that takes the theme from one source, the venue from another and the price from the third. The all-caps title is replaced by the mixed-case one. The fourth is a different act on the same day and stays separate. The rules are covered in `tests/test_cross_source_dedup.py` and `tests/test_second_pass_dedup.py`.
 
@@ -55,11 +55,12 @@ The first three share a date and a title (exactly, or as a word prefix), so they
 | Panda Events | HTTP | Club and mid-size venues; real prices on almost every card |
 | Cannes tourist office | HTTP | Concert detected from the detail page; includes nearby communes |
 | Menton tourist office | HTTP | Same platform as Cannes; several nearby communes |
-| Songkick | Playwright | Nice city page (JSON-LD). See [Responsible use](#responsible-use) |
 | HelloAsso | Playwright | Hand-picked organizers only (JSON-LD). See [Responsible use](#responsible-use) |
 | Manual entries | YAML | For events from sources that aren't scraped |
 
-Not used: Resident Advisor, Shotgun and Instagram (bot protection and/or terms rule scraping out). Antibes has an adapter in the code but is switched off: its legal notice forbids extracting from its database without agreement.
+Switched off: Antibes, whose legal notice forbids extracting from its database without agreement, and Songkick, whose terms prohibit scrapers and automated data mining without written consent. I collected from Songkick from mid-September 2026 until 2026-10-05; the events collected stay in the dataset as history and are no longer refreshed. Both adapters stay in the code as commented-out lines in `config/settings.yaml`, to be re-enabled only with the site's written consent.
+
+Not used: Resident Advisor, Shotgun and Instagram (bot protection and/or terms rule scraping out).
 
 ## Quick start (Windows)
 
@@ -84,9 +85,9 @@ Tests run offline on saved markup and fake sessions:
 
 - Personal, non-commercial use. The data files are not committed (`data/` is gitignored) and nothing is republished.
 - One run a day at most, a pause between requests, and no more than around a hundred requests per source per run.
-- The HTTP adapters identify themselves (`nice-events-tracker; personal project`). The two browser adapters (Songkick, HelloAsso) use a standard Chrome User-Agent, because those sites reject plain HTTP clients.
-- Terms differ by source. The tourist-office notices restrict reproduction and publication of their content and say nothing about automated access. HelloAsso's terms contain no scraping clause I could find. **Songkick's terms prohibit scrapers and automated data mining without written consent.** I use the Songkick and HelloAsso adapters for my own private use and accept that risk myself. If you fork this, decide for yourself: each is a single line in `config/settings.yaml`, and Songkick in particular should not be run publicly, commercially or at any volume.
-- New sources get a manual review of `robots.txt` and the site's legal notice first. That review is why Resident Advisor was never added and Antibes was switched off.
+- The HTTP adapters identify themselves (`nice-events-tracker; personal project`). The browser adapters (HelloAsso in use; Songkick and Antibes switched off) use a standard Chrome User-Agent, because those sites reject plain HTTP clients.
+- Terms differ by source. The tourist-office notices restrict reproduction and publication of their content and say nothing about automated access. HelloAsso's terms contain no scraping clause I could find. **Songkick's terms prohibit scrapers and automated data mining without written consent.** I used its adapter for my own private use for about three weeks, then switched it off on 2026-10-05 because of that prohibition. If you fork this, read each site's terms yourself, and do not run the Songkick adapter publicly, commercially or at any volume.
+- New sources get a manual review of `robots.txt` and the site's legal notice first. That review is why Resident Advisor was never added and why Antibes was switched off.
 
 ## Built with Claude Code
 
